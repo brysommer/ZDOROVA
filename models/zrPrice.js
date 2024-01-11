@@ -88,6 +88,12 @@ const findALLZrPrices = async () => {
     return;
 };
 
+const findALLZrPricesbyCity = async (pharmacy_region) => {
+    const res = await zrPrices.findAll({ where: { pharmacy_region } });
+    if (res.length > 0) return res.map(el => el.dataValues);
+    return;
+};
+
 export {
     zrPrices,
     createNewZrPrice,

@@ -2,8 +2,8 @@ import axios from 'axios';
 import XLSX from 'xlsx';
 import { logger } from './logger/index.js';
 import { sequelize } from './models/sequelize.js';
-import { createNewName, findZrNameById, findAllNames } from './models/zrNames.js';
-import { findZdorovaPriceByDrugPharmacy, createNewZrPrice, updateZrPrice, findALLZrPrices } from './models/zrPrice.js';
+import {  findZrNameById } from './models/zrNames.js';
+import { findZdorovaPriceByDrugPharmacy, createNewZrPrice, updateZrPrice, findALLZrPricesbyCity } from './models/zrPrice.js';
 
 
 
@@ -233,11 +233,28 @@ const writeArrayToXLS = (arrayData, xlsFilePath) => {
   }
 }
 
+const zdorovaLocations = [
+  'Львів',
+  'Івано-Франківськ',
+  'Трускавець',
+  'Моршин',
+  'Стебник',
+  'Дрогобич',
+  'Коломия',
+  'Долина',
+  'Болехів',
+  'Брошнів',
+  'Галич',
+  'Ужгород'
+]
+
+
+
 async function run() {
   
   try {
     await runZdorova();
-    /*
+    
     let csvDataZr = [[
       'id',
       'drug_id',
@@ -250,34 +267,39 @@ async function run() {
       'price',
       'availability_status',
       'updated_at',
-    ]];    
-    const dataArrayZr = await findALLZrPrices();
-    for (const el of dataArrayZr) {
-      csvDataZr.push([
-        el.id,
-        el.drug_id,
-        el.drug_name,
-        el.drug_producer,
-        el.pharmacy_id,
-        el.pharmacy_name,
-        el.pharmacy_region,
-        el.pharmacy_address,
-        el.price,
-        el.availability_status,
-        el.updatedAt
-      ])
+    ]]; 
+
+    for (city in zdorovaLocations) {
+      const cityDataZr = await findALLZrPricesbyCity(city);
+      logger.info(`${cityDataZr.length} довжина Здорової в місті ${city}`)
+      for (const el of cityDataZr) {
+        csvDataZr.push([
+          el.id,
+          el.drug_id,
+          el.drug_name,
+          el.drug_producer,
+          el.pharmacy_id,
+          el.pharmacy_name,
+          el.pharmacy_region,
+          el.pharmacy_address,
+          el.price,
+          el.availability_status,
+          el.updatedAt
+        ])
+      }  
     }
+
     const date = new Date();
     const filename = date.toISOString().replace(/T/g, "_").replace(/:/g, "-");
     console.log(`Довжина здорова родина:${csvDataZr.length}`);
     writeArrayToXLS(csvDataZr, `priceZdorova${filename}.xls`);
     await new Promise(resolve => setTimeout(resolve, 300000));
     csvDataZr = [];
-    */
+    
   } catch (error) {
     console.error('Помилка здорова родина: ', error);
   }
-  //run();
+  run();
 };
 
 run();
