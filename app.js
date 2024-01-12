@@ -270,7 +270,7 @@ async function run() {
       'updated_at',
     ]]; 
 
-    for (city in zdorovaLocations) {
+    for (const city of zdorovaLocations) {
       const cityDataZr = await findALLZrPricesbyCity(city);
       logger.info(`${cityDataZr.length} довжина Здорової в місті ${city}`)
       for (const el of cityDataZr) {
