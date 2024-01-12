@@ -100,4 +100,5 @@ export {
     updateZrPrice,
     findZdorovaPriceByDrugPharmacy,
     findALLZrPrices,
+    findALLZrPricesbyCity
 };   
