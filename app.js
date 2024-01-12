@@ -272,24 +272,25 @@ async function run() {
 
     for (const city of zdorovaLocations) {
       const cityDataZr = await findALLZrPricesbyCity(city);
-      logger.info(`${cityDataZr.length} довжина Здорової в місті ${city}`)
-      for (const el of cityDataZr) {
-        csvDataZr.push([
-          el.id,
-          el.drug_id,
-          el.drug_name,
-          el.drug_producer,
-          el.pharmacy_id,
-          el.pharmacy_name,
-          el.pharmacy_region,
-          el.pharmacy_address,
-          el.price,
-          el.availability_status,
-          el.updatedAt
-        ])
+      if (cityDataZr) {
+        logger.info(`${cityDataZr.length} довжина Здорової в місті ${city}`)
+        for (const el of cityDataZr) {
+          csvDataZr.push([
+            el.id,
+            el.drug_id,
+            el.drug_name,
+            el.drug_producer,
+            el.pharmacy_id,
+            el.pharmacy_name,
+            el.pharmacy_region,
+            el.pharmacy_address,
+            el.price,
+            el.availability_status,
+            el.updatedAt
+          ])
+        }  
       }  
-    }
-
+      }
     const date = new Date();
     const filename = date.toISOString().replace(/T/g, "_").replace(/:/g, "-");
     console.log(`Довжина здорова родина:${csvDataZr.length}`);
