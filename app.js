@@ -2,10 +2,11 @@ import axios from 'axios';
 import XLSX from 'xlsx';
 import { logger } from './logger/index.js';
 import { sequelize } from './models/sequelize.js';
-import {  findZrNameById } from './models/zrNames.js';
+import {  findZrNameById, findAllNames } from './models/zrNames.js';
 import { findZdorovaPriceByDrugPharmacy, createNewZrPrice, updateZrPrice, findALLZrPricesbyCity } from './models/zrPrice.js';
 
 
+const sharedFolderPath = '../price/SynologyDrive/';
 
 
 
@@ -67,21 +68,21 @@ function textBeforeComma(text) {
 
 
 const runZdorova = async () => {
-
+  const zrNamesDB = await findAllNames();
   for (let i = 5314; i < 34377; i++) {
     if (i % 100 === 0) {
       logger.info(`Здорова обробляє елемент #${i}`)
     }
     console.log(i);
 
-    const zrName = await findZrNameById(i);
+    //const zrName = await findZrNameById(i);
 
-    const data = await getApiData(zrName.drug_id);
+    const data = await getApiData(zrNamesDB[i].drug_id);
     if (data) {
       if (data.prices.other.length > 0) {
         const otherCities = data.prices.other;
         for (const el of otherCities) {
-          const element = await findZdorovaPriceByDrugPharmacy(zrName.drug_id, el.pharmacy_id);
+          const element = await findZdorovaPriceByDrugPharmacy(zrNamesDB[i].drug_id, el.pharmacy_id);
           if (element) {
             await updateZrPrice(element.id, el.price);
           } else {
@@ -105,7 +106,7 @@ const runZdorova = async () => {
       if (data.prices.current_city.length > 0) {
         const current_city = data.prices.other;
         for (const el of current_city) {
-          const element = await findZdorovaPriceByDrugPharmacy(zrName.drug_id, el.pharmacy_id);
+          const element = await findZdorovaPriceByDrugPharmacy(zrNamesDB[i].drug_id, el.pharmacy_id);
           if (element) {
             await updateZrPrice(element.id, el.price);
           } else {
@@ -253,7 +254,7 @@ const zdorovaLocations = [
 async function run() {
   
   try {
-    await runZdorova();
+   // await runZdorova();
     
     let csvDataZr = [[
       'id',
