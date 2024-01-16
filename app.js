@@ -69,7 +69,7 @@ function textBeforeComma(text) {
 
 const runZdorova = async () => {
   const zrNamesDB = await findAllNames();
-  for (let i = 11950; i < 34377; i++) {
+  for (let i = 1; i < 34377; i++) {
     if (i % 100 === 0) {
       logger.info(`Здорова обробляє елемент #${i}`)
     }
