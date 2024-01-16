@@ -254,7 +254,7 @@ const zdorovaLocations = [
 async function run() {
   
   try {
-    await runZdorova();
+    //await runZdorova();
     
     let csvDataZr = [[
       'id',
