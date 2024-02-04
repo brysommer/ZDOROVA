@@ -69,13 +69,11 @@ function textBeforeComma(text) {
 
 const runZdorova = async () => {
   const zrNamesDB = await findAllNames();
-  for (let i = 1; i < 34377; i++) {
+  for (let i = 34350; i < 34377; i++) {
     if (i % 100 === 0) {
       logger.info(`Здорова обробляє елемент #${i}`)
     }
     console.log(i);
-
-    //const zrName = await findZrNameById(i);
 
     const data = await getApiData(zrNamesDB[i].drug_id);
     if (data) {
@@ -130,79 +128,6 @@ const runZdorova = async () => {
 }
 
 
-/*
-function convertArrayToSheet(APIdata) {
-  if (APIdata.prices.other[0] == undefined) {
-    return
-  }
-
-
-  console.log(APIdata.prices.other[0])
-  APIdata.prices.other.forEach((item) => {
-
-        const location = textBeforeComma(item.pharmacy.address);
-
-        csvData.push([
-          '0',
-          item.product_id,
-          APIdata.product.name,
-          'невідомо',
-          item.pharmacy_id,
-          item.pharmacy.title,
-          location[0],
-          location[1],
-          item.price_old,
-          'Забронювати',
-          new Date(),
-        ]
-        );
-  });
-  //return csvData;
-}
-
-
-
-
-async function run() {
-  try {
-    
-    for (let i = 60; i < 360; i++) {
-      const apiData = await getApiData(i);
-      const dataArray = convertArrayToSheet(apiData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    //const dataArray = convertArrayToSheet(apiData);
-    writeArrayToXLS(csvData, 'ZdorovaRoduna.xls');
-  } catch (error) {
-    console.error('Помилка: ', error);
-  }
-}
-
-run();
-*/
-
-/*
-const generateNumbers = async () => {
-  try {
-    for (let i = 32202; i <= 34376; i++) { 
-        console.log(i) 
-        const xml = await getApiData(i);
-        if (xml) {
-          createNewName({
-            drug_name: xml.product.name,
-            drug_id: i,
-          })
-
-        }
-    }
-  
-  } catch (error) {
-    console.error('Помилка: ', error);
-  }
-}
-
-generateNumbers();
-*/
 const writeArrayToXLS = (arrayData, xlsFilePath) => {
   try {
     const maxRowsPerSheet = 50000;
@@ -254,7 +179,7 @@ const zdorovaLocations = [
 async function run() {
   
   try {
-    //await runZdorova();
+    await runZdorova();
     
     let csvDataZr = [[
       'id',
@@ -295,8 +220,8 @@ async function run() {
     const filename = date.toISOString().replace(/T/g, "_").replace(/:/g, "-");
     console.log(`Довжина здорова родина:${csvDataZr.length}`);
     writeArrayToXLS(csvDataZr, `priceZdorova${filename}.xls`);
-    await new Promise(resolve => setTimeout(resolve, 300000));
-    csvDataZr = [];
+    //await new Promise(resolve => setTimeout(resolve, 300000));
+    //csvDataZr = [];
     
   } catch (error) {
     console.error('Помилка здорова родина: ', error);
