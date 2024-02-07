@@ -167,7 +167,7 @@ const runZdorova = async () => {
     if (zrNames.length % 1000 === 0) {
       logger.info(`Здорова залишилось елементів #${zrNames.length}`)
     }
-    if (zrNames.length % 1 === 0) {
+    if (zrNames.length === 0) {
       
       await writeDB();
 
