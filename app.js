@@ -76,6 +76,8 @@ const getApiData = async(search) => {
     return response.data.data;
   } catch (error) {
     console.error('Помилка при отриманні XML: ', error.code);
+    logger.warn(`Невдалий запит до Здорової товар #: ${search} Причина: ${error.code} `);
+
     return false;
   }
 
@@ -111,9 +113,10 @@ const runZdorova = async () => {
     const name = zrNames[index];
       
     const data = await getApiData(name.drug_id);
-    console.log(`Данні${data.prices.prices_map.length}`)
 
     if (data) {
+      console.log(`Данні${data.prices.prices_map.length}`)
+
       if (data.prices.prices_map.length === 0) {
         await deleteOutdatedName(name.drug_id)
       }
@@ -157,10 +160,10 @@ const runZdorova = async () => {
       
     zrNames.splice(index, 1);
 
-    if (zrNames.length % 100 === 0) {
+    if (zrNames.length % 1000 === 0) {
       logger.info(`Здорова залишилось елементів #${zrNames.length}`)
     }
-    if (zrNames.length % 10000 === 0) {
+    if (zrNames.length % 1 === 0) {
       
       await writeDB();
 
