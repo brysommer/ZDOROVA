@@ -1,6 +1,6 @@
 import axios from 'axios';
 import XLSX from 'xlsx';
-//import { logger } from './logger/index.js';
+import { logger } from './logger/index.js';
 import { sequelize } from './models/sequelize.js';
 import {  findZrNameById, findAllNames, deleteOutdatedName } from './models/zrNames.js';
 import { 
@@ -71,7 +71,7 @@ const getApiData = async(search) => {
     console.log(response.data.succsess)
     if (response.status === 404) return false;
     if (response.data.succsess != true) {
-      //logger.warn(`Невдалий запит до Здорової товар #: ${search} Причина: ${response.data.succsess} `);
+      logger.warn(`Невдалий запит до Здорової товар #: ${search} Причина: ${response.data.succsess} `);
       return false;
     };
     return response.data.data;
@@ -95,10 +95,6 @@ function textBeforeComma(text) {
 
 
 const runZdorova = async () => {
-  //await deleteUsefullData()
-  //const pharmacyIds = await findALLPharmaciesIDs();
-  
-  //await fs.writeFile(filePath, JSON.stringify(pharmacyIds));
   
   const data = await fs.readFile(filePath, 'utf8');
   
@@ -163,7 +159,7 @@ const runZdorova = async () => {
     zrNames.splice(index, 1);
 
     if (zrNames.length % 100 === 0) {
-      //logger.info(`Здорова залишилось елементів #${zrNames.length}`)
+      logger.info(`Здорова залишилось елементів #${zrNames.length}`)
     }
     if (zrNames.length % 10000 === 0) {
       
@@ -184,7 +180,7 @@ const writeArrayToXLSX = (arrayData, xlsxFilePath) => {
 
   XLSX.writeFile(workbook, sharedFolderPath+xlsxFilePath);
 
-  //logger.info(`Записано ${arrayData.length} елементів, в файл ${xlsxFilePath.slice(0, 9)}`);
+  logger.info(`Записано ${arrayData.length} елементів, в файл ${xlsxFilePath.slice(0, 9)}`);
   
   console.log("Здорова XLSX");
 }
@@ -221,23 +217,6 @@ const writeArrayToXLS = (arrayData, xlsFilePath) => {
   }
 }
 
-const zdorovaLocations = [
-  'Львів',
-  'Івано-Франківськ',
-  'Трускавець',
-  'Моршин',
-  'Стебник',
-  'Дрогобич',
-  'Коломия',
-  'Долина',
-  'Болехів',
-  'Брошнів',
-  'Галич',
-  'Ужгород'
-]
-
-
-
 async function writeDB() {
   
   try {
@@ -257,9 +236,9 @@ async function writeDB() {
     ]]; 
 
     const cityDataZr = await findALLZrPrices();
-      //logger.info(`${cityDataZr.length} довжина Здорової в місті ${city}`)
-      for (const el of cityDataZr) {
-        csvDataZr.push([
+      
+    for (const el of cityDataZr) {
+      csvDataZr.push([
           el.id,
           el.drug_id,
           el.drug_name,
@@ -271,8 +250,10 @@ async function writeDB() {
           el.price,
           el.availability_status,
           el.updatedAt
-        ])
-      }  
+      ])
+    }  
+
+    logger.info(`${cityDataZr.length} - довжина Здорової`)
       /*
     for (city in zdorovaLocations) {
       const cityDataZr = await findALLZrPricesbyCity(city);
