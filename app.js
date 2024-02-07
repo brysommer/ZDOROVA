@@ -1,12 +1,22 @@
 import axios from 'axios';
 import XLSX from 'xlsx';
-import { logger } from './logger/index.js';
+//import { logger } from './logger/index.js';
 import { sequelize } from './models/sequelize.js';
-import {  findZrNameById } from './models/zrNames.js';
-import { findZdorovaPriceByDrugPharmacy, createNewZrPrice, updateZrPrice, findALLZrPricesbyCity } from './models/zrPrice.js';
+import {  findZrNameById, findAllNames, deleteOutdatedName } from './models/zrNames.js';
+import { 
+  findZdorovaPriceByDrugPharmacy,
+  createNewZrPrice,
+  updateZrPrice,
+  findALLZrPricesbyCity,
+  findALLPharmaciesIDs,
+  deleteUsefullData,
+  findALLZrPrices
+ } from './models/zrPrice.js';
+import fs from 'fs/promises';
+const filePath = './pharmacy_ids.json';
+const sharedFolderPath = '../price/SynologyDrive/';
 
-
-
+let oldFileName;
 
 
 const main = async () => {
@@ -45,13 +55,31 @@ main();
 
 const getApiData = async(search) => {
   try {
-    const response = await axios.get(`https://zr.in.ua/product/${search}/prices`);
+    const response = await axios.post(`https://zr.in.ua/product/${search}/prices`,
+    {
+      _token: 'TSq8Bt2sWlGMhXlgIjOEPbN4P7gZnXfjD6cKb7n2',
+      sort: 'distance|asc',
+      page: 1
+    },
+    {
+      headers: {
+          "Cookie": " XSRF-TOKEN=eyJpdiI6IlF3c3FFOFQyQ2pyUFVzcVd6a2daQkE9PSIsInZhbHVlIjoiWkJmTm9XWWowZ2tvZHBhK29xWUxtRTlvSW1NZ3R2TWMvNVpkWU5wY1hCbzVjb2ZlUDYzR2dCSjB3UjRRN2Mvd0tIaGx0SmRrcEVCdHJaMVZEdnA0QzJRTWE4OFJjZFVpc0xjb0Y2ZTQ3dXNraVZEWTZnclpjKzJVSXhDekgwWkwiLCJtYWMiOiJkMjRlZjc2MmJhNzJhZDAxNDMyYTc1OTdmYzZmMjYxZDQ1YjJmODFiYmU4ZDcxNTg0Y2YyYTVjMDc1YzMyYmNjIiwidGFnIjoiIn0%3D; zdorova_rodyna_session=eyJpdiI6IlpKL0xtd0lTTG1EL1BhMiszRS92VVE9PSIsInZhbHVlIjoiRkpkcFVyeWY3OHczREd6MXdUUVI4VmhSRnRDc0lzWFNUUzg3QnY0U1hZSldRZWhsOEcyY0JZTDF2MXNvUHFEbkRsNkNHQ1czOHpFOXMrQU8rVFp0V2FZZFVKMld6SDNUQlMzM21SVmNwSFpBelJxWXQvNFQwT0NnTVA1ZWMrangiLCJtYWMiOiIzZTM0ODJiMTkxODhiMWQ5Y2YwOWFmZTk3YjcwMmQzM2JmNjIxNDM0ZTliODE3ZTQ1MjkwYmE1ZGEzZGIwNWU0IiwidGFnIjoiIn0%3D;",
+        }
+    }
+
+    );
+    console.log(response.data.succsess)
     if (response.status === 404) return false;
+    if (response.data.succsess != true) {
+      //logger.warn(`Невдалий запит до Здорової товар #: ${search} Причина: ${response.data.succsess} `);
+      return false;
+    };
     return response.data.data;
   } catch (error) {
     console.error('Помилка при отриманні XML: ', error.code);
     return false;
   }
+
 }
 
 
@@ -67,141 +95,101 @@ function textBeforeComma(text) {
 
 
 const runZdorova = async () => {
-
-  for (let i = 5314; i < 34377; i++) {
-    if (i % 100 === 0) {
-      logger.info(`Здорова обробляє елемент #${i}`)
-    }
-    console.log(i);
-
-    const zrName = await findZrNameById(i);
-
-    const data = await getApiData(zrName.drug_id);
-    if (data) {
-      if (data.prices.other.length > 0) {
-        const otherCities = data.prices.other;
-        for (const el of otherCities) {
-          const element = await findZdorovaPriceByDrugPharmacy(zrName.drug_id, el.pharmacy_id);
-          if (element) {
-            await updateZrPrice(element.id, el.price);
-          } else {
-            const location = textBeforeComma(el.pharmacy.address);
-            await createNewZrPrice({
-              drug_id: el.product_id,
-              drug_name: data.product.name,
-              drug_producer: '',
-              pharmacy_id: el.pharmacy_id,
-              pharmacy_name: el.pharmacy.title,
-              pharmacy_region: location[0],
-              pharmacy_address: location[1],
-              price: el.price_old,
-              availability_status: 'Забронювати',
-            })  
-          }
-        }
-        
-
-      }
-      if (data.prices.current_city.length > 0) {
-        const current_city = data.prices.other;
-        for (const el of current_city) {
-          const element = await findZdorovaPriceByDrugPharmacy(zrName.drug_id, el.pharmacy_id);
-          if (element) {
-            await updateZrPrice(element.id, el.price);
-          } else {
-            const location = textBeforeComma(el.pharmacy.address);
-            await createNewZrPrice({
-              drug_id: el.product_id,
-              drug_name: data.product.name,
-              drug_producer: '',
-              pharmacy_id: el.pharmacy_id,
-              pharmacy_name: el.pharmacy.title,
-              pharmacy_region: location[0],
-              pharmacy_address: location[1],
-              price: el.price_old,
-              availability_status: 'Забронювати',
-            })  
-          }
-        }
-      }
-    }
-  }
-}
-
-
-/*
-function convertArrayToSheet(APIdata) {
-  if (APIdata.prices.other[0] == undefined) {
-    return
-  }
-
-
-  console.log(APIdata.prices.other[0])
-  APIdata.prices.other.forEach((item) => {
-
-        const location = textBeforeComma(item.pharmacy.address);
-
-        csvData.push([
-          '0',
-          item.product_id,
-          APIdata.product.name,
-          'невідомо',
-          item.pharmacy_id,
-          item.pharmacy.title,
-          location[0],
-          location[1],
-          item.price_old,
-          'Забронювати',
-          new Date(),
-        ]
-        );
-  });
-  //return csvData;
-}
-
-
-
-
-async function run() {
-  try {
-    
-    for (let i = 60; i < 360; i++) {
-      const apiData = await getApiData(i);
-      const dataArray = convertArrayToSheet(apiData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    //const dataArray = convertArrayToSheet(apiData);
-    writeArrayToXLS(csvData, 'ZdorovaRoduna.xls');
-  } catch (error) {
-    console.error('Помилка: ', error);
-  }
-}
-
-run();
-*/
-
-/*
-const generateNumbers = async () => {
-  try {
-    for (let i = 32202; i <= 34376; i++) { 
-        console.log(i) 
-        const xml = await getApiData(i);
-        if (xml) {
-          createNewName({
-            drug_name: xml.product.name,
-            drug_id: i,
-          })
-
-        }
-    }
+  //await deleteUsefullData()
+  //const pharmacyIds = await findALLPharmaciesIDs();
   
-  } catch (error) {
-    console.error('Помилка: ', error);
+  //await fs.writeFile(filePath, JSON.stringify(pharmacyIds));
+  
+  const data = await fs.readFile(filePath, 'utf8');
+  
+  const parsedData = JSON.parse(data);
+  console.log(parsedData.length)
+  const pharmacyIds = parsedData.map(s => Number(s));
+  let zrNames = [];
+  while (true) {
+    if (zrNames.length === 0) {
+      zrNames = await findAllNames(); 
+    }
+      
+    const index = Math.floor(Math.random() * zrNames.length);
+      
+    const name = zrNames[index];
+      
+    const data = await getApiData(name.drug_id);
+    console.log(`Данні${data.prices.prices_map.length}`)
+
+    if (data) {
+      if (data.prices.prices_map.length === 0) {
+        await deleteOutdatedName(name.drug_id)
+      }
+
+      if (data.prices.prices_map.length > 0) {
+        const otherCities = data.prices.prices_map;
+        console.log(`Other cities length: ${otherCities.length}`)
+        const matchedPharmacys = [];
+
+        for (let i = 0; i < otherCities.length; i++) {
+          const pharmacy = otherCities[i];
+          
+          if (pharmacyIds.includes(pharmacy.pharmacy_id)) {
+            matchedPharmacys.push(pharmacy); 
+          }
+          
+        }
+        console.log(`matchedPharmacys: ${matchedPharmacys.length}`)
+        for (const pharmacy of matchedPharmacys) {
+          const element = await findZdorovaPriceByDrugPharmacy(name.drug_id, pharmacy.pharmacy_id);
+          if (element) {
+            const update = await updateZrPrice(element.id, pharmacy.price);
+          } else {
+            const location = textBeforeComma(pharmacy.pharmacy.address);
+            await createNewZrPrice({
+              drug_id: pharmacy.product_id,
+              drug_name: data.product.name,
+              drug_producer: pharmacy.price,
+              pharmacy_id: pharmacy.pharmacy_id,
+              pharmacy_name: pharmacy.pharmacy.title,
+              pharmacy_region: location[0],
+              pharmacy_address: location[1],
+              price: pharmacy.price_old,
+              availability_status: pharmacy.quantity,
+            })  
+          }
+        }
+      }
+    }
+
+      
+    zrNames.splice(index, 1);
+
+    if (zrNames.length % 100 === 0) {
+      //logger.info(`Здорова залишилось елементів #${zrNames.length}`)
+    }
+    if (zrNames.length % 10000 === 0) {
+      
+      await writeDB();
+
+    }
+    console.log(`Drag ID: ${name.drug_id}, ZR names lenght: ${zrNames.length}`);
+
   }
 }
 
-generateNumbers();
-*/
+const writeArrayToXLSX = (arrayData, xlsxFilePath) => {
+
+  const worksheet = XLSX.utils.aoa_to_sheet(arrayData);
+  
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+
+  XLSX.writeFile(workbook, sharedFolderPath+xlsxFilePath);
+
+  //logger.info(`Записано ${arrayData.length} елементів, в файл ${xlsxFilePath.slice(0, 9)}`);
+  
+  console.log("Здорова XLSX");
+}
+
+
 const writeArrayToXLS = (arrayData, xlsFilePath) => {
   try {
     const maxRowsPerSheet = 50000;
@@ -225,10 +213,10 @@ const writeArrayToXLS = (arrayData, xlsFilePath) => {
     XLSX.writeFile(workbook, sharedFolderPath + xlsFilePath);
     console.log(sheets.length, arrayData.length, xlsFilePath)
     
-    logger.info(`Записано ${sheets.length} частин, ${arrayData.length} элементів в ${xlsFilePath.slice(0, 9)}`);
+    //logger.info(`Записано ${sheets.length} частин, ${arrayData.length} элементів в ${xlsFilePath.slice(0, 9)}`);
     console.log('Масив успішно записано в XLS.');
   } catch (error) {
-    logger.warn(`Масив: ${arrayData.length} Шлях: ${xlsFilePath} Помилка під час запису масиву в XLS:`, error)
+    //logger.warn(`Масив: ${arrayData.length} Шлях: ${xlsFilePath} Помилка під час запису масиву в XLS:`, error)
     console.error('Помилка під час запису масиву в XLS:', error);
   }
 }
@@ -250,28 +238,45 @@ const zdorovaLocations = [
 
 
 
-async function run() {
+async function writeDB() {
   
   try {
-    await runZdorova();
     
     let csvDataZr = [[
       'id',
       'drug_id',
       'drug_name',
-      'drug_producer',
+      'regular_price',
       'pharmacy_id',
       'pharmacy_name',
       'pharmacy_region',
       'pharmacy_address',
       'price',
-      'availability_status',
+      'quantity',
       'updated_at',
     ]]; 
 
+    const cityDataZr = await findALLZrPrices();
+      //logger.info(`${cityDataZr.length} довжина Здорової в місті ${city}`)
+      for (const el of cityDataZr) {
+        csvDataZr.push([
+          el.id,
+          el.drug_id,
+          el.drug_name,
+          el.drug_producer,
+          el.pharmacy_id,
+          el.pharmacy_name,
+          el.pharmacy_region,
+          el.pharmacy_address,
+          el.price,
+          el.availability_status,
+          el.updatedAt
+        ])
+      }  
+      /*
     for (city in zdorovaLocations) {
       const cityDataZr = await findALLZrPricesbyCity(city);
-      logger.info(`${cityDataZr.length} довжина Здорової в місті ${city}`)
+      //logger.info(`${cityDataZr.length} довжина Здорової в місті ${city}`)
       for (const el of cityDataZr) {
         csvDataZr.push([
           el.id,
@@ -288,21 +293,25 @@ async function run() {
         ])
       }  
     }
+    */ 
+
+    if(oldFileName) fs.unlink(sharedFolderPath + oldFileName);
 
     const date = new Date();
     const filename = date.toISOString().replace(/T/g, "_").replace(/:/g, "-");
     console.log(`Довжина здорова родина:${csvDataZr.length}`);
-    writeArrayToXLS(csvDataZr, `priceZdorova${filename}.xls`);
-    await new Promise(resolve => setTimeout(resolve, 300000));
+    oldFileName = `priceZdorova${filename}.xlsx`
+    writeArrayToXLSX(csvDataZr, `priceZdorova${filename}.xlsx`);
+    //writeArrayToXLS(csvDataZr, `priceZdorova${filename}.xls`);
+    
     csvDataZr = [];
     
   } catch (error) {
     console.error('Помилка здорова родина: ', error);
   }
-  run();
 };
 
-run();
+await runZdorova();
 
 
 

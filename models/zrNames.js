@@ -49,9 +49,20 @@ const findZrNameById = async (id) => {
     return;
 }
 
+const deleteOutdatedName = async (drug_id) => {
+
+    await zrNames.destroy({
+      where: { drug_id }
+    });
+    
+    console.log(`Запис: ${drug_id} видалено`);
+  
+  }
+
 export {
     zrNames,
     createNewName,
     findAllNames,
-    findZrNameById
+    findZrNameById,
+    deleteOutdatedName
 };   

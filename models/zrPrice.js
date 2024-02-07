@@ -1,4 +1,4 @@
-import { Model, DataTypes } from "sequelize";
+import { Model, DataTypes,  Op } from "sequelize";
 import { sequelize } from './sequelize.js';
 
 
@@ -94,10 +94,54 @@ const findALLZrPricesbyCity = async (pharmacy_region) => {
     return;
 };
 
+const zdorovaLocations = [
+    'Львів',
+    'Івано-Франківськ',
+    'Трускавець',
+    'Моршин',
+    'Стебник',
+    'Дрогобич',
+    'Коломия',
+    'Долина',
+    'Болехів',
+    'Брошнів',
+    'Галич',
+    'Ужгород'
+  ]
+const findALLPharmaciesIDs = async () => {
+    const res = await zrPrices.findAll({
+        attributes: ['pharmacy_id', 'pharmacy_region'],
+        where: {
+          pharmacy_region: zdorovaLocations 
+        }
+      });
+    
+      const ids = res.map(r => r.pharmacy_id);
+      
+      return [...new Set(ids)];
+  }
+
+  const deleteUsefullData = async () => {
+
+    await zrPrices.destroy({
+      where: {
+        [Op.not]: {
+          pharmacy_region: zdorovaLocations
+        } 
+      }
+    });
+    
+    console.log('Записи видалено');
+  
+  }
+
 export {
     zrPrices,
     createNewZrPrice,
     updateZrPrice,
     findZdorovaPriceByDrugPharmacy,
     findALLZrPrices,
+    findALLZrPricesbyCity,
+    findALLPharmaciesIDs,
+    deleteUsefullData
 };   
