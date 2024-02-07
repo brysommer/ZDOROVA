@@ -2,19 +2,18 @@ import axios from 'axios';
 import XLSX from 'xlsx';
 import { logger } from './logger/index.js';
 import { sequelize } from './models/sequelize.js';
-import {  findZrNameById, findAllNames, deleteOutdatedName } from './models/zrNames.js';
+import { findAllNames, deleteOutdatedName } from './models/zrNames.js';
 import { 
   findZdorovaPriceByDrugPharmacy,
   createNewZrPrice,
   updateZrPrice,
-  findALLZrPricesbyCity,
-  findALLPharmaciesIDs,
-  deleteUsefullData,
-  findALLZrPrices
+  findALLZrPrices,
+  updateZrPriceNew
  } from './models/zrPrice.js';
 import fs from 'fs/promises';
+
 const filePath = './pharmacy_ids.json';
-const sharedFolderPath = '../price/SynologyDrive/';
+const sharedFolderPath = '../../price/SynologyDrive/';
 
 let oldFileName;
 
@@ -136,18 +135,18 @@ const runZdorova = async () => {
         for (const pharmacy of matchedPharmacys) {
           const element = await findZdorovaPriceByDrugPharmacy(name.drug_id, pharmacy.pharmacy_id);
           if (element) {
-            const update = await updateZrPrice(element.id, pharmacy.price);
+            const update = await updateZrPriceNew(element.id, pharmacy.price, pharmacy.price_old, pharmacy.quantity);
           } else {
             const location = textBeforeComma(pharmacy.pharmacy.address);
             await createNewZrPrice({
               drug_id: pharmacy.product_id,
               drug_name: data.product.name,
-              drug_producer: pharmacy.price,
+              drug_producer: pharmacy.price_old,
               pharmacy_id: pharmacy.pharmacy_id,
               pharmacy_name: pharmacy.pharmacy.title,
               pharmacy_region: location[0],
               pharmacy_address: location[1],
-              price: pharmacy.price_old,
+              price: pharmacy.price,
               availability_status: pharmacy.quantity,
             })  
           }
@@ -225,12 +224,12 @@ async function writeDB() {
       'id',
       'drug_id',
       'drug_name',
-      'regular_price',
+      'discounted_price',
       'pharmacy_id',
       'pharmacy_name',
       'pharmacy_region',
       'pharmacy_address',
-      'price',
+      'regular_price',
       'quantity',
       'updated_at',
     ]]; 

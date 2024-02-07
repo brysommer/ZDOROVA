@@ -76,6 +76,18 @@ const updateZrPrice = async (id, price) => {
     return undefined;
 };
 
+const updateZrPriceNew = async (id, price, price_old, quantity) => {
+    const res = await zrPrices.update({ 
+        price,
+        drug_producer: price_old,
+        availability_status: quantity
+     } , { where: { id } });
+    if (res[0]) {
+            return res[0];
+    } 
+    return undefined;
+};
+
 const findZdorovaPriceByDrugPharmacy = async (drug_id, pharmacy_id) => {
     const res = await zrPrices.findOne({ where: { drug_id, pharmacy_id }});
     if (res) return res.dataValues;
@@ -143,5 +155,6 @@ export {
     findALLZrPrices,
     findALLZrPricesbyCity,
     findALLPharmaciesIDs,
-    deleteUsefullData
+    deleteUsefullData,
+    updateZrPriceNew
 };   
