@@ -12,7 +12,7 @@ import {
  } from './models/zrPrice.js';
 import fs from 'fs/promises';
 
-const v8 = require('v8');
+import v8 from 'v8';
 
 console.log(v8.getHeapStatistics().max_old_space_size);
 
