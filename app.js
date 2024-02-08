@@ -21,6 +21,18 @@ const sharedFolderPath = '../../price/SynologyDrive/';
 
 let oldFileName;
 
+function randomPause(averageSeconds) {
+  const deviation = averageSeconds / 2; 
+  const min = averageSeconds - deviation;
+  const max = averageSeconds + deviation;
+  
+  const randomSeconds = Math.random() * (max - min) + min;
+  
+  return new Promise(resolve => {
+    setTimeout(resolve, randomSeconds * 1000); 
+  });
+}
+
 
 const main = async () => {
   const models = {
@@ -164,10 +176,12 @@ const runZdorova = async () => {
       
     zrNames.splice(index, 1);
 
+    await randomPause(14);
+
     if (zrNames.length % 1000 === 0) {
       logger.info(`Здорова залишилось елементів #${zrNames.length}`)
     }
-    if (zrNames.length === 0) {
+    if (zrNames.length === 12456) {
       
       await writeDB();
 
