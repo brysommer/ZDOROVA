@@ -178,7 +178,7 @@ const runZdorova = async () => {
 
     await randomPause(7);
 
-    if (zrNames.length % 1000 === 0) {
+    if (zrNames.length % 11400 === 0) {
 
       logger.info(`Здорова залишилось елементів #${zrNames.length}`);
       await writeDB();
@@ -204,36 +204,6 @@ const writeArrayToXLSX = (arrayData, xlsxFilePath) => {
 }
 
 
-const writeArrayToXLS = (arrayData, xlsFilePath) => {
-  try {
-    const maxRowsPerSheet = 50000;
-    const sheets = [];
-    let count = 1;
-    
-    for(let i = 0; i < arrayData.length; i += maxRowsPerSheet) {
-      const chunk = arrayData.slice(i, i + maxRowsPerSheet);
-      const sheetName = `PART_${count++}`; 
-      
-      const worksheet = XLSX.utils.aoa_to_sheet(chunk);
-      sheets.push({name: sheetName, worksheet});
-    }
-    
-    const workbook = XLSX.utils.book_new();
-    
-    sheets.forEach(sheet => {
-      XLSX.utils.book_append_sheet(workbook, sheet.worksheet, sheet.name); 
-    });
-    
-    XLSX.writeFile(workbook, sharedFolderPath + xlsFilePath);
-    console.log(sheets.length, arrayData.length, xlsFilePath)
-    
-    //logger.info(`Записано ${sheets.length} частин, ${arrayData.length} элементів в ${xlsFilePath.slice(0, 9)}`);
-    console.log('Масив успішно записано в XLS.');
-  } catch (error) {
-    //logger.warn(`Масив: ${arrayData.length} Шлях: ${xlsFilePath} Помилка під час запису масиву в XLS:`, error)
-    console.error('Помилка під час запису масиву в XLS:', error);
-  }
-}
 
 async function writeDB() {
   
@@ -272,27 +242,6 @@ async function writeDB() {
     }  
 
     logger.info(`${cityDataZr.length} - довжина Здорової`)
-      /*
-    for (city in zdorovaLocations) {
-      const cityDataZr = await findALLZrPricesbyCity(city);
-      //logger.info(`${cityDataZr.length} довжина Здорової в місті ${city}`)
-      for (const el of cityDataZr) {
-        csvDataZr.push([
-          el.id,
-          el.drug_id,
-          el.drug_name,
-          el.drug_producer,
-          el.pharmacy_id,
-          el.pharmacy_name,
-          el.pharmacy_region,
-          el.pharmacy_address,
-          el.price,
-          el.availability_status,
-          el.updatedAt
-        ])
-      }  
-    }
-    */ 
 
     if(oldFileName) fs.unlink(sharedFolderPath + oldFileName);
 
@@ -301,7 +250,6 @@ async function writeDB() {
     console.log(`Довжина здорова родина:${csvDataZr.length}`);
     oldFileName = `priceZdorova${filename}.xlsx`
     writeArrayToXLSX(csvDataZr, `priceZdorova${filename}.xlsx`);
-    //writeArrayToXLS(csvDataZr, `priceZdorova${filename}.xls`);
     
     csvDataZr = [];
     
