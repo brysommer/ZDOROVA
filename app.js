@@ -176,13 +176,11 @@ const runZdorova = async () => {
       
     zrNames.splice(index, 1);
 
-    await randomPause(14);
+    await randomPause(7);
 
     if (zrNames.length % 1000 === 0) {
-      logger.info(`Здорова залишилось елементів #${zrNames.length}`)
-    }
-    if (zrNames.length === 0) {
-      
+
+      logger.info(`Здорова залишилось елементів #${zrNames.length}`);
       await writeDB();
 
     }
